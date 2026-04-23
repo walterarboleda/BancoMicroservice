@@ -120,3 +120,16 @@ app.Run();
 # ¿Cómo probarlo?
 
 Al presionar F5 en Visual Studio, se abrirá automáticamente una página de Swagger (OpenAPI). Desde ahí podrás probar cada uno de los métodos (GET, POST, etc.) directamente en el navegador sin instalar herramientas externas.
+
+
+# Referencias
+
+https://javiergarzas.com/2015/06/microservicios.html
+
+https://jugnicaragua.org/comunicacion-entre-microservicios-con-spring/
+
+https://www.mytaskpanel.com/arquitectura-de-microservicios-escalabilidad-y-flexibilidad/
+
+https://www.oscarblancarteblog.com/2018/05/22/que-son-los-microservicios/
+
+
