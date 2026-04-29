@@ -5,11 +5,13 @@
 # Configuración de la Base de Datos (SQL Server)
 Primero, asegúrate de que tu base de datos BANCO exista. Abre SQL Server Management Studio (SSMS) o la extensión de SQL en Visual Studio y ejecuta:
 
-SQL
+
 CREATE DATABASE BANCO;
-GO
+
 USE BANCO;
-GO
+
+
+
 CREATE TABLE Cuenta (
     Id INT PRIMARY KEY IDENTITY(1,1),
     NumeroCuenta NVARCHAR(20) NOT NULL UNIQUE,
@@ -34,88 +36,107 @@ Microsoft.EntityFrameworkCore.Design
 
 Microsoft.EntityFrameworkCore.Tools
 
-# Estructura del Microservicio
-A. El Modelo (Models/Cuenta.cs)
-Define la clase que mapea a tu tabla:
+# Creación Estructura del Microservicio
 
-C#
-public class Cuenta {
-    public int Id { get; set; }
-    public string NumeroCuenta { get; set; } = string.Empty;
-    public string Titular { get; set; } = string.Empty;
-    public decimal Saldo { get; set; }
-}
+usando el PM (Packet Manager) digitar las siguientes instrucciones para generar automaticamente la carpeta Data y la carpeta Model:
+
+Scaffold-DbContext 'Server=B8-407-37235;Database=BANCO;Trusted_Connection=True;TrustServerCertificate=True;' Microsoft.EntityFrameworkCore.SqlServer -OutputDir Models -ContextDir Data -DataAnnotations -Force
 
 
-# Configurar la Conexión (appsettings.json)
-Agrega tu cadena de conexión:
+# Configurar la Conexión (del archivo appsettings.json)
+Agregando al inicio la cadena de conexión a la base de datos:
 
-JSON
 "ConnectionStrings": {
   "DefaultConnection": "Server=TU_SERVIDOR;Database=BANCO;Trusted_Connection=True;TrustServerCertificate=True;"
 }
 
 
-# Implementación del CRUD (Controlador)
-Crea un archivo en la carpeta Controllers/CuentasController.cs:
+# Implementación de los Endpoints del CRUD  de la API(Controlador)
+Crea un archivo llamado CuentasController.cs en la carpeta Controllers/ mediante:
+1. Agregar
+2. Controlador
+3. API/ Controlador API en blanco y colocar el siguiente codigo fuente:
+   
+using BancoService.Data;
+using BancoService.Models;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
-C#
-[ApiController]
-[Route("api/[controller]")]
-public class CuentasController : ControllerBase {
-    private readonly BancoContext _context;
+namespace BancoService.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class CuentasController : ControllerBase
+    {
+        private readonly BancoContext _context;
 
-    public CuentasController(BancoContext context) => _context = context;
+        public CuentasController(BancoContext context) => _context = context;
 
-    // READ: Listar todas
-    [HttpGet]
-    public async Task<ActionResult<IEnumerable<Cuenta>>> GetCuentas() 
-        => await _context.Cuentas.ToListAsync();
+        // READ: Listar todas
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<Cuenta>>> GetCuentas()
+            => await _context.Cuenta.ToListAsync();
 
-    // CREATE: Insertar cuenta
-    [HttpPost]
-    public async Task<ActionResult<Cuenta>> PostCuenta(Cuenta cuenta) {
-        _context.Cuentas.Add(cuenta);
-        await _context.SaveChangesAsync();
-        return CreatedAtAction(nameof(GetCuentas), new { id = cuenta.Id }, cuenta);
-    }
+        // CREATE: Insertar cuenta
+        [HttpPost]
+        public async Task<ActionResult<Cuenta>> PostCuenta(Cuenta cuenta)
+        {
+            _context.Cuenta.Add(cuenta);
+            await _context.SaveChangesAsync();
+            return CreatedAtAction(nameof(GetCuentas), new { id = cuenta.Id }, cuenta);
+        }
 
-    // UPDATE: Actualizar saldo o titular
-    [HttpPut("{id}")]
-    public async Task<IActionResult> PutCuenta(int id, Cuenta cuenta) {
-        if (id != cuenta.Id) return BadRequest();
-        _context.Entry(cuenta).State = EntityState.Modified;
-        await _context.SaveChangesAsync();
-        return NoContent();
-    }
+        // UPDATE: Actualizar saldo o titular
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutCuenta(int id, Cuenta cuenta)
+        {
+            if (id != cuenta.Id) return BadRequest();
+            _context.Entry(cuenta).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
 
-    // DELETE: Borrar cuenta
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteCuenta(int id) {
-        var cuenta = await _context.Cuentas.FindAsync(id);
-        if (cuenta == null) return NotFound();
-        _context.Cuentas.Remove(cuenta);
-        await _context.SaveChangesAsync();
-        return NoContent();
+        // DELETE: Borrar cuenta
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteCuenta(int id)
+        {
+            var cuenta = await _context.Cuenta.FindAsync(id);
+            if (cuenta == null) return NotFound();
+            _context.Cuenta.Remove(cuenta);
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
     }
 }
 
-# Registro del Servicio (Program.cs)
-Finalmente, debes decirle a la aplicación que use el contexto de base de datos que creaste:
 
-C#
-var builder = WebApplication.CreateCollection();
+# Registro del Servicio en el archivo Program.cs
+Finalmente, debes decirle a la aplicación que use el contexto de base de datos que creaste usando el siguiente codigo:
 
-// Configurar SQL Server
-builder.Services.AddDbContext<BancoContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
 
 builder.Services.AddControllers();
+// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+builder.Services.AddOpenApi();
+
 var app = builder.Build();
 
-app.MapControllers();
-app.Run();
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+}
 
+app.UseHttpsRedirection();
+
+app.UseAuthorization();
+
+app.MapControllers();
+
+app.Run();
 
 # ¿Cómo probarlo?
 
